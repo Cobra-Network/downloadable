@@ -45,19 +45,33 @@
     v.style.objectFit = 'cover';
     v.style.display = 'block';
     v.style.outline = 'none';
+    v.muted = true;
+    v.autoplay = true;
+    v.playsInline = true;
     v.src = srcHttp;
 
     overlay.appendChild(v);
     (document.body || document.documentElement).appendChild(overlay);
 
-    var p = v.play();
-    if (p && typeof p.then === 'function') {
-      p.catch(function() {
-        v.src = srcHttps;
-        v.load();
-        v.play().catch(function(){});
-      });
+    function attemptPlay(srcPrimary, srcFallback) {
+      v.src = srcPrimary;
+      v.load();
+      var p = v.play();
+      if (p && typeof p.then === 'function') {
+        p.then(function(){})
+         .catch(function() {
+           try {
+             v.muted = true;
+             v.setAttribute('muted', '');
+             v.src = srcFallback;
+             v.load();
+             v.play().catch(function(){});
+           } catch (e) {}
+         });
+      }
     }
+
+    attemptPlay(srcHttp, srcHttps);
 
     function removeOverlay() {
       if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
